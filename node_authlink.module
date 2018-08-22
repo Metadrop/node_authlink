@@ -16,7 +16,7 @@ function node_authlink_form_node_type_form_alter(&$form, FormStateInterface &$fo
 
   /** @var \Drupal\node\Entity\NodeType $node_type */
   $node_type = $form_state->getFormObject();
-  $type = $node_type->id();
+  $type = $node_type->getEntity()->id();
   $config = \Drupal::config('node_authlink.settings');
 
   $form['node_authlink'] = [
@@ -48,7 +48,7 @@ function node_authlink_form_node_type_form_alter(&$form, FormStateInterface &$fo
 
   // Time periods:                 none, 1 day, 1 week, 4 weeks
   $time_periods = [0, 86400, 604800, 2419200];
-  $period = array_map('format_interval', array_combine($time_periods, $time_periods));
+  $period = node_authlink_build_options($time_periods);
 
   $period[0] = '<' . t('disabled') . '>';
   $form['node_authlink']['node_authlink_expire'] = [
@@ -78,6 +78,14 @@ function node_authlink_form_node_type_form_alter(&$form, FormStateInterface &$fo
   ];
 
   $form['#submit'][] = 'node_authlink_form_node_type_form_alter_submit';
+}
+
+function node_authlink_build_options(array $time_intervals, $granularity = 2, $langcode = NULL) {
+  $callback = function ($value) use ($granularity, $langcode) {
+    return \Drupal::service('date.formatter')->formatInterval($value, $granularity, $langcode);
+  };
+
+  return array_combine($time_intervals, array_map($callback, $time_intervals));
 }
 
 /**
