@@ -1,6 +1,8 @@
 <?php
 // $Id$
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Url;
+use Drupal\node\Entity\Node;
 
 /**
  * Alter of node_type_form.
@@ -145,20 +147,31 @@ function node_authlink_load_authkey($nid) {
  */
 function node_authlink_get_url($node, $op = 'edit') {
   if(is_numeric($node))
-    $node = node_load($node);
+    $node = Node::load($node);
 
   if(!isset($node->authkey))
     return FALSE;
 
-  if($op == 'view')
-    $op = '';
-  else
-    $op = '/' . $op;
+  switch ($op) {
+    case 'view':
+      $route_name = 'entity.node.canonical';
+      break;
+    case 'edit':
+      $route_name = 'entity.node.edit';
+      break;
+    case 'delete':
+      $route_name = 'entity.node.delete';
+      break;
+    default:
+      return FALSE;
+  }
 
-  return url("node/$node->nid$op", array(
+
+  $url = Url::fromRoute($route_name, ['node' => 1], [
     'absolute' => TRUE,
-    'query' => array('authkey' => $node->authkey),
-  ));
+    'query' => ['authkey' => $node->authkey],
+  ]);
+  return $url->toString();
 }
 
 /**
@@ -169,8 +182,11 @@ function node_authlink_node_access(\Drupal\node\NodeInterface $node, $op, \Drupa
   if($op == 'create')
     return AccessResult::neutral();
 
+  $config = \Drupal::config('node_authlink.settings');
+  $config_enable = $config->get('enable');
+
   // Ignore if node type is not enabled
-  if(!variable_get('node_authlink_enable_' . $node->bundle(), FALSE))
+  if(!isset($config_enable[$node->bundle()]) || !$config_enable[$node->bundle()])
     return AccessResult::neutral();
 
   // Check key if:
@@ -185,7 +201,8 @@ function node_authlink_node_access(\Drupal\node\NodeInterface $node, $op, \Drupa
         $session_manager->start();
 
       // Save allowed grants to session
-      $_SESSION['node_authlink_nodes'][$node->nid] = variable_get('node_authlink_grants_' . $node->bundle(), array());
+      $config_grants = $config->get('grants');
+      $_SESSION['node_authlink_nodes'][$node->id()] = $config_grants[$node->bundle()];
     }
   }
 
