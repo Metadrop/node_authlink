@@ -3,6 +3,7 @@
 use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
@@ -346,9 +347,9 @@ function node_authlink_token_info() {
 }
 
 /**
- * Implementation of hook_tokens().
+ * Implements hook_tokens().
  */
-function node_authlink_tokens($type, $tokens, array $data = [], array $options = []) {
+function node_authlink_tokens($type, $tokens, array $data = [], array $options = [], BubbleableMetadata $bubbleable_metadata) {
   if ($type != 'node') {
     return;
   }
