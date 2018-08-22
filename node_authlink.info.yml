@@ -1,0 +1,4 @@
+name: Node authorize link
+description: Generates link for view, edit, or delete node without login.
+version: 8.x-1.0
+core: 8.x
