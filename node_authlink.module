@@ -240,10 +240,12 @@ function node_authlink_node_access(NodeInterface $node, $op, AccountInterface $a
 
     if ($node->authkey == $_GET['authkey']) {
       // Start session
-      if (!isset($_SESSION)) /** @var \Drupal\Core\Session\SessionManager $session_manager */ {
+
+      if ($account->isAnonymous() && !isset($_SESSION['node_authlink_nodes'])) {
+        /** @var \Drupal\Core\Session\SessionManager $session_manager */
         $session_manager = \Drupal::service('session_manager');
+        $session_manager->start();
       }
-      $session_manager->start();
 
       // Save allowed grants to session
       $config_grants = $config->get('grants');
