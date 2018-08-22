@@ -140,11 +140,11 @@ function node_authlink_batch_delete(&$form, FormStateInterface &$form_state) {
 
 
 /**
- * Implementation of hook_node_load().
+ * Implements hook_node_load().
  *
  * Appends authke to loaded node object.
  */
-function node_authlink_node_load($nodes, $types) {
+function node_authlink_node_load($nodes) {
   foreach ($nodes as $nid => $node) {
     // TODO: check node type (performance)
     if ($authkey = node_authlink_load_authkey($nid)) {
