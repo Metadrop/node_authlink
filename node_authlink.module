@@ -20,10 +20,8 @@ function node_authlink_form_node_type_form_alter(&$form, FormStateInterface &$fo
   $config = \Drupal::config('node_authlink.settings');
 
   $form['node_authlink'] = [
-    '#type' => 'fieldset',
+    '#type' => 'details',
     '#title' => t('Node authorize link'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
     '#group' => 'additional_settings',
   ];
 
@@ -76,8 +74,7 @@ function node_authlink_form_node_type_form_alter(&$form, FormStateInterface &$fo
     '#value' => t('Delete all authkeys'),
     '#submit' => ['node_authlink_batch_delete'],
   ];
-
-  $form['#submit'][] = 'node_authlink_form_node_type_form_alter_submit';
+  $form['actions']['submit']['#submit'][] = 'node_authlink_form_node_type_form_alter_submit';
 }
 
 function node_authlink_build_options(array $time_intervals, $granularity = 2, $langcode = NULL) {
@@ -93,14 +90,27 @@ function node_authlink_build_options(array $time_intervals, $granularity = 2, $l
  */
 function node_authlink_form_node_type_form_alter_submit(&$form, FormStateInterface &$form_state) {
   // Disabled
+  $type = $form_state->getValue('type');
+  $config_factory = \Drupal::configFactory();
+  $config = $config_factory->getEditable('node_authlink.settings');
+  $enable = $config->get('enable');
+  $grants = $config->get('grants');
+  $expire = $config->get('expire');
+
   if (!$form_state->getValue('node_authlink_enable')) {
-    $type = $form_state->getValue('type');
-    $config_factory = \Drupal::configFactory();
-    $config_factory->getEditable('node_authlink.settings.enable.' . $type)
-      ->delete();
-    $config_factory->getEditable('node_authlink.settings.grants.' . $type)
-      ->delete();
+    unset($enable[$type]);
+    unset($grants[$type]);
   }
+  else {
+    $enable[$type] = TRUE;
+    $grants[$type] = $form_state->getValue('node_authlink_grants');
+  }
+  $expire[$type] = $form_state->getValue('node_authlink_expire');
+
+  $config->set('enable', $enable);
+  $config->set('grants', $grants);
+  $config->set('expire', $expire);
+  $config->save();
 }
 
 /**
