@@ -116,12 +116,12 @@ function node_authlink_form_node_type_form_alter_submit(&$form, FormStateInterfa
 /**
  * Generate authkeys for all nodes in node type.
  */
-function node_authlink_batch_generate(&$form, &$form_state) {
+function node_authlink_batch_generate(&$form, FormStateInterface &$form_state) {
   // Load NIDs that are not in the authkeys table
   $query = db_select('node', 'n');
   $query->leftJoin('node_authlink_nodes', 'a', 'n.nid = a.nid');
   $query->fields('n', ['nid'])
-    ->condition('type', $form_state['values']['type'])
+    ->condition('type', $form_state->getValue('type'))
     ->isNull('authkey');
   $nids = $query->execute()->fetchCol();
 
@@ -210,7 +210,7 @@ function node_authlink_get_url($node, $op = 'edit') {
   }
 
 
-  $url = Url::fromRoute($route_name, ['node' => 1], [
+  $url = Url::fromRoute($route_name, ['node' => $node->id()], [
     'absolute' => TRUE,
     'query' => ['authkey' => $node->authkey],
   ]);
