@@ -9,6 +9,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\node\Entity\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Class NodeAuthlinkNodeForm.
@@ -48,12 +49,56 @@ class NodeAuthlinkNodeForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $node = NULL) {
-    $form['submit'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Create authlink'),
-      '#weight' => '0',
-    ];
+    if (!is_numeric($node)) {
+      throw new NotFoundHttpException();
+    }
+
+    $config = $this->configFactory->get('node_authlink.settings');
+    $config_grants = $config->get('grants');
+
+    $node = Node::load($node);
+
+    if (isset($config_grants[$node->bundle()])) {
+      foreach ($config_grants[$node->bundle()] as $op) {
+        if (!$op) {
+          continue;
+        }
+        $url = node_authlink_get_url($node, $op);
+        if ($url) {
+
+          $form['link_'.$op] = [
+            '#type' => 'markup',
+            '#markup' => '<p>' . $url . '</p>',
+          ];
+          $form['delete_' . $op] = [
+            '#type' => 'submit',
+            '#value' => $this->t('Delete @op authlink', ['@op' => $op]),
+            '#weight' => '0',
+            '#submit' => ['::deleteAuthlink' . ucfirst($op)]
+          ];
+        }
+        else {
+          $form['create_' . $op] = [
+            '#type' => 'submit',
+            '#value' => $this->t('Create @op authlink', ['@op' => $op]),
+            '#weight' => '0',
+            '#submit' => ['::createAuthlink' . ucfirst($op)]
+          ];
+        }
+
+      }
+    }
+
+
     return $form;
+  }
+
+  public function createAuthlink(array &$form, FormStateInterface $form_state, $op) {
+
+  }
+
+  public function deleteAuthlink(array &$form, FormStateInterface $form_state, $op) {
+
   }
 
   /**
