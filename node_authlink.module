@@ -143,7 +143,7 @@ function node_authlink_batch_generate(&$form, FormStateInterface &$form_state) {
 
   // Create keys
   foreach ($nids as $nid) {
-    node_authlink_node_insert($nid);
+    node_authlink_create($nid);
   }
 
   drupal_set_message(t('%num authkeys has been generated.', ['%num' => count($nids)]));
@@ -164,10 +164,9 @@ function node_authlink_batch_delete(&$form, FormStateInterface &$form_state) {
     ->isNotNull('authkey');
   $nids = $query->execute()->fetchCol();
 
-  // Delete keys
-  $count = db_delete('node_authlink_nodes')
-    ->condition('nid', $nids, 'IN')
-    ->execute();
+  foreach ($nids as $nid) {
+    node_authlink_delete($nid);
+  }
 
   drupal_set_message(t('%num authkeys has been deleted.', ['%num' => $count]));
 }
@@ -277,27 +276,21 @@ function node_authlink_node_access(NodeInterface $node, $op, AccountInterface $a
 }
 
 /**
- * Implementation of hook_node_presave().
- *
- * Pre-generate auth key for the new node (e.g. for use in Rules).
+ * Implements hook_ENTITY_TYPE_delete().
  */
-function node_authlink_node_presave(Node $node) {
-  // Ignore if node type is disabled
+function node_authlink_node_delete(Drupal\Core\Entity\EntityInterface $entity) {
   $config = \Drupal::config('node_authlink.settings');
-  if (!$config->get('enable.' . $node->bundle())) {
-    return;
+  $enable = $config->get('enable');
+  // Ignore if node type is disabled
+  if (isset($enable[$entity->bundle()]) && $enable[$entity->bundle()]) {
+    node_authlink_delete($entity->id());
   }
-
-  // Generate key
-  $node->authkey = hash('sha256', Crypt::randomBytes(64));
 }
 
 /**
- * Implementation of hook_node_insert().
- *
  * Generate and save auth key for the new node.
  */
-function node_authlink_node_insert($node) {
+function node_authlink_create($node) {
   // Allow key generate without load node object
   if (is_numeric($node)) {
     $nid = $node;
@@ -322,6 +315,25 @@ function node_authlink_node_insert($node) {
       'authkey' => $authkey,
       'created' => time(),
     ])
+    ->execute();
+}
+
+/**
+ * Deletes the node_authlink.
+ *
+ * @param $node
+ */
+function node_authlink_delete($node) {
+  if (is_numeric($node)) {
+    $nid = $node;
+  }
+  else {
+    $nid = $node->id();
+  }
+
+  // Delete keys
+  $count = db_delete('node_authlink_nodes')
+    ->condition('nid', $nid)
     ->execute();
 }
 
