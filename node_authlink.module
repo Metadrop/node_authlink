@@ -45,7 +45,7 @@ function node_authlink_form_node_type_form_alter(&$form, FormStateInterface &$fo
     '#default_value' => isset($config_grants[$type])? $config_grants[$type] : [],
     '#options' => [
       'view' => t('View'),
-      'update' => t('Update'),
+      'edit' => t('Update'),
       'delete' => t('Delete'),
     ],
     '#description' => t('What operations will be temporarily given to authorised user for the node. This not affect users who is authorised yet.'),
@@ -201,7 +201,7 @@ function node_authlink_load_authkey($nid) {
  * @param $node Node object or NID.
  * @param $op Operation to do with node. view, edit (default) or delete.
  */
-function node_authlink_get_url($node, $op = 'edit') {
+function node_authlink_get_url($node, $op = 'view') {
   if (is_numeric($node)) {
     $node = Node::load($node);
   }
@@ -251,7 +251,7 @@ function node_authlink_node_access(NodeInterface $node, $op, AccountInterface $a
 
   // Check key if:
   if (isset($_GET['authkey']) && // authkey param is set
-    isset($node->authkey)) { // authkey in node is set
+    isset($node->authkey)) { // authkey in node is setand
 
     if ($node->authkey == $_GET['authkey']) {
       // Start session

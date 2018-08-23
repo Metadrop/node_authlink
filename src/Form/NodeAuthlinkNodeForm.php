@@ -58,47 +58,67 @@ class NodeAuthlinkNodeForm extends FormBase {
 
     $node = Node::load($node);
 
+    $form['disclaimer'] = [
+      '#type' => 'markup',
+      '#markup' => '<p>' . $this->t('Use the following form to manage anonymous authlinks for performing View, Update or Delete tasks without any further authentication. The links available will depends on the configuration of this content type.') . '</p>',
+    ];
+
     if (isset($config_grants[$node->bundle()])) {
+
       foreach ($config_grants[$node->bundle()] as $op) {
         if (!$op) {
           continue;
         }
         $url = node_authlink_get_url($node, $op);
         if ($url) {
-
+          // @todo: use a table instead.
           $form['link_'.$op] = [
             '#type' => 'markup',
-            '#markup' => '<p>' . $url . '</p>',
+            '#markup' => "<p><strong>$op</strong>: $url</p>",
           ];
-          $form['delete_' . $op] = [
-            '#type' => 'submit',
-            '#value' => $this->t('Delete @op authlink', ['@op' => $op]),
-            '#weight' => '0',
-            '#submit' => ['::deleteAuthlink' . ucfirst($op)]
-          ];
-        }
-        else {
-          $form['create_' . $op] = [
-            '#type' => 'submit',
-            '#value' => $this->t('Create @op authlink', ['@op' => $op]),
-            '#weight' => '0',
-            '#submit' => ['::createAuthlink' . ucfirst($op)]
-          ];
-        }
 
+        }
       }
-    }
 
+      if (node_authlink_load_authkey($node->id())) {
+        $form['delete'] = [
+          '#type' => 'submit',
+          '#value' => $this->t('Delete authlink'),
+          '#weight' => 10,
+          '#submit' => ['::deleteAuthlink'],
+        ];
+      }
+      else {
+        $form['create'] = [
+          '#type' => 'submit',
+          '#value' => $this->t('Create authlink'),
+          '#weight' => 10,
+          '#submit' => ['::createAuthlink']
+        ];
+      }
+
+    }
 
     return $form;
   }
 
-  public function createAuthlink(array &$form, FormStateInterface $form_state, $op) {
-
+  /**
+   * Create authlink submit callback.
+   *
+   * @param array $form
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   */
+  public function createAuthlink(array &$form, FormStateInterface $form_state) {
+    node_authlink_create($form_state->getBuildInfo()['args'][0]);
   }
 
-  public function deleteAuthlink(array &$form, FormStateInterface $form_state, $op) {
-
+  /**
+   * Delete authlink submit callback.
+   * @param array $form
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   */
+  public function deleteAuthlink(array &$form, FormStateInterface $form_state) {
+    node_authlink_delete($form_state->getBuildInfo()['args'][0]);
   }
 
   /**
