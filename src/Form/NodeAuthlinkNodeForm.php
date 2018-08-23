@@ -2,8 +2,11 @@
 
 namespace Drupal\node_authlink\Form;
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\node\Entity\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 
@@ -71,4 +74,22 @@ class NodeAuthlinkNodeForm extends FormBase {
 
   }
 
+  /**
+   * Checks that node_authlink was enabled for this content type.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param $node
+   *
+   * @return \Drupal\Core\Access\AccessResultInterface
+   */
+  public function access(AccountInterface $account, $node) {
+    if (is_numeric($node)) {
+      $node = Node::load($node);
+      $enable = $this->config('node_authlink.settings')->get('enable');
+      if (isset($enable[$node->bundle()]) && $enable[$node->bundle()]) {
+        return AccessResult::allowed();
+      }
+    }
+    return AccessResult::forbidden();
+  }
 }
