@@ -14,6 +14,9 @@ use Drupal\node\NodeInterface;
  */
 function node_authlink_form_node_type_form_alter(&$form, FormStateInterface &$form_state) {
 
+  if (!\Drupal::currentUser()->hasPermission('configure node_authlink module')) {
+    return;
+  }
   /** @var \Drupal\node\Entity\NodeType $node_type */
   $node_type = $form_state->getFormObject();
   $type = $node_type->getEntity()->id();
@@ -77,6 +80,15 @@ function node_authlink_form_node_type_form_alter(&$form, FormStateInterface &$fo
   $form['actions']['submit']['#submit'][] = 'node_authlink_form_node_type_form_alter_submit';
 }
 
+/**
+ * Helper function to build expire options.
+ *
+ * @param array $time_intervals
+ * @param int $granularity
+ * @param null $langcode
+ *
+ * @return array
+ */
 function node_authlink_build_options(array $time_intervals, $granularity = 2, $langcode = NULL) {
   $callback = function ($value) use ($granularity, $langcode) {
     return \Drupal::service('date.formatter')->formatInterval($value, $granularity, $langcode);

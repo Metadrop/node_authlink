@@ -2,8 +2,8 @@ node_authlink.node_authlink_node_form:
   path: 'node/{node}/authlink'
   defaults:
     _form: '\Drupal\node_authlink\Form\NodeAuthlinkNodeForm'
-    _title: 'NodeAuthlinkNodeForm'
+    _title: 'Authlink'
   requirements:
-    _access: TRUE
+    _permission: 'create and delete node authlinks'
   options:
-    _admin_route: FALSE
+    _admin_route: TRUE
