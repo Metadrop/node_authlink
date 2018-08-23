@@ -200,10 +200,10 @@ function node_authlink_get_url($node, $op = 'edit') {
       $route_name = 'entity.node.canonical';
       break;
     case 'edit':
-      $route_name = 'entity.node.edit';
+      $route_name = 'entity.node.edit_form';
       break;
     case 'delete':
-      $route_name = 'entity.node.delete';
+      $route_name = 'entity.node.delete_form';
       break;
     default:
       return FALSE;
