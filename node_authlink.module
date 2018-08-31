@@ -152,11 +152,13 @@ function node_authlink_batch_generate(&$form, FormStateInterface &$form_state) {
 /**
  * Delete authkeys for all nodes in node type.
  *
- * @param $form
+ * @param array $form
+ *   Form.
  * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   Form state.
  */
-function node_authlink_batch_delete(&$form, FormStateInterface &$form_state) {
-  // NIDs of nodes that are in this node type
+function node_authlink_batch_delete(array &$form, FormStateInterface &$form_state) {
+  // NIDs of nodes that are in this node type.
   $query = db_select('node', 'n');
   $query->leftJoin('node_authlink_nodes', 'a', 'n.nid = a.nid');
   $query->fields('n', ['nid'])
@@ -168,9 +170,8 @@ function node_authlink_batch_delete(&$form, FormStateInterface &$form_state) {
     node_authlink_delete($nid);
   }
 
-  drupal_set_message(t('%num authkeys has been deleted.', ['%num' => $count]));
+  drupal_set_message(t('%num authkeys has been deleted.', ['%num' => count($nids)]));
 }
-
 
 /**
  * Implements hook_node_load().
