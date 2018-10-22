@@ -22,7 +22,7 @@ class NodeRevisionAccessCheck extends NodeRevisionAccessCheckOriginal {
       return AccessResult::allowed();
     }
 
-    parent::checkAccess($node, $account, $op);
+    return parent::checkAccess($node, $account, $op);
   }
 
 }
