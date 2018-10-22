@@ -242,13 +242,47 @@ function node_authlink_node_access(NodeInterface $node, $op, AccountInterface $a
     return AccessResult::neutral();
   }
 
+  // Ignore if node type is not enabled
+  if (!node_authlink_node_is_enabled($node)) {
+    return AccessResult::neutral();
+  }
+
+  if (node_authlink_check_authlink($node, $op, $account)) {
+    return AccessResult::allowed();
+  }
+
+}
+
+/**
+ * Checks if a node is enabled for node_authlink
+ *
+ * @param \Drupal\node\NodeInterface $node
+ *   The node to check.
+ *
+ * @return bool
+ */
+function node_authlink_node_is_enabled (NodeInterface $node) {
   $config = \Drupal::config('node_authlink.settings');
   $config_enable = $config->get('enable');
 
-  // Ignore if node type is not enabled
-  if (!isset($config_enable[$node->bundle()]) || !$config_enable[$node->bundle()]) {
-    return AccessResult::neutral();
+  if (isset($config_enable[$node->bundle()]) && $config_enable[$node->bundle()]) {
+    return TRUE;
   }
+
+  return FALSE;
+}
+
+/**
+ * Check if a node has access to a node via authlink and grant it the query parameter is correct.
+ *
+ * @param \Drupal\node\NodeInterface $node
+ * @param $op
+ * @param \Drupal\Core\Session\AccountInterface $account
+ *
+ * @return bool
+ */
+function node_authlink_check_authlink(NodeInterface $node, $op, AccountInterface $account) {
+  $config = \Drupal::config('node_authlink.settings');
 
   // Check key if:
   if (isset($_GET['authkey']) && // authkey param is set
@@ -272,9 +306,11 @@ function node_authlink_node_access(NodeInterface $node, $op, AccountInterface $a
   // Permit if checked
   if (isset($_SESSION['node_authlink_nodes'][$node->id()]) &&
     in_array($op, $_SESSION['node_authlink_nodes'][$node->id()])) {
-    return AccessResult::allowed();
+    return TRUE;
   }
+  return FALSE;
 }
+
 
 /**
  * Implements hook_ENTITY_TYPE_delete().
