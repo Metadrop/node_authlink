@@ -69,15 +69,82 @@ class NodeAuthlinkNodeForm extends FormBase {
         if (!$op) {
           continue;
         }
-        $url = node_authlink_get_url($node, $op);
-        if ($url) {
-          // @todo: use a table instead.
-          $form['link_'.$op] = [
-            '#type' => 'markup',
-            '#markup' => "<p><strong>$op</strong>: $url</p>",
-          ];
 
+        // If $op is view, load all revisions.
+        $has_revisions = FALSE;
+        if ($op == 'view') {
+          $has_revisions = TRUE;
+          $node_storage = \Drupal::entityManager()->getStorage('node');
+
+          $result = $node_storage->getQuery()
+            ->allRevisions()
+            ->condition($node->getEntityType()->getKey('id'), $node->id())
+            ->sort($node->getEntityType()->getKey('revision'), 'DESC')
+            ->range(0, 50)
+            ->execute();
+          if (!empty($result)) {
+            $revision_options = [];
+            foreach ($result as $vid => $nid) {
+
+              $revision = $node_storage->loadRevision($vid);
+              $langcode = $node->language()->getId();
+              // Only show revisions that are affected by the language that is being
+              // displayed.
+              if ($revision->hasTranslation($langcode) && $revision->getTranslation($langcode)->isRevisionTranslationAffected()) {
+
+                // Use revision link to link to revisions that are not active.
+                $dateFormatter = \Drupal::service('date.formatter');
+                $date = $dateFormatter->format($revision->revision_timestamp->value, 'short');
+
+                if ($revision->isDefaultRevision()) {
+                  $revision_options[$vid] = [
+                    'text' =>  $this->t('Current revision'),
+                    'url' => node_authlink_get_url($node, $op),
+                  ];
+                }
+                else {
+                  $revision_options[$vid] = [
+                    'text' =>  $date,
+                    'url' => node_authlink_get_url($node, $op, $vid),
+                  ];
+                }
+              }
+            }
+          }
         }
+
+        if ($has_revisions) {
+          $form['revisions'] = [
+            '#type' => 'select',
+            '#title' => $this->t('Revisions'),
+            '#options' => [],
+          ];
+          // @todo: use a table instead.
+          foreach ($revision_options as $vid => $revision_option) {
+            $form['revisions']['#options'][$vid] = $revision_option['text'];
+
+            $form['link_' . $op . '_' . $vid] = [
+              '#type' => 'item',
+              '#markup' => "<p><strong>" . $op . "</strong>: " . $revision_option['url'] . "</p>",
+              '#states' => [
+                'visible' => [
+                  '[name="revisions"]' => ['value' => $vid],
+                ],
+              ],
+            ];
+          }
+        }
+        else {
+          $url = node_authlink_get_url($node, $op);
+          if ($url) {
+            // @todo: use a table instead.
+            $form['link_'.$op] = [
+              '#type' => 'item',
+              '#markup' => "<p><strong>$op</strong>: $url</p>",
+            ];
+          }
+        }
+
       }
 
       if (node_authlink_load_authkey($node->id())) {
