@@ -317,7 +317,7 @@ function node_authlink_check_authlink(NodeInterface $node, $op, AccountInterface
 
   // Permit if checked
   if (isset($_SESSION['node_authlink_nodes'][$node->id()]) &&
-    in_array($op, $_SESSION['node_authlink_nodes'][$node->id()])) {
+    in_array($op, $_SESSION['node_authlink_nodes'][$node->id()], TRUE)) {
     return TRUE;
   }
   return FALSE;
