@@ -18,7 +18,7 @@ class NodeRevisionAccessCheck extends NodeRevisionAccessCheckOriginal {
    * {@inheritdoc}
    */
   public function checkAccess(NodeInterface $node, AccountInterface $account, $op = 'view') {
-    if (node_authlink_node_is_enabled($node) && node_authlink_check_authlink($node, $op, $account)) {
+    if (!$node->isLatestRevision() && node_authlink_node_is_enabled($node) && node_authlink_check_authlink($node, $op, $account)) {
       return AccessResult::allowed();
     }
 
