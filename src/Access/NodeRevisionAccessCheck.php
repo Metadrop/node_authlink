@@ -19,10 +19,14 @@ class NodeRevisionAccessCheck extends NodeRevisionAccessCheckOriginal {
    */
   public function checkAccess(NodeInterface $node, AccountInterface $account, $op = 'view') {
     if (!$node->isDefaultRevision() && node_authlink_node_is_enabled($node) && node_authlink_check_authlink($node, $op, $account)) {
-      return AccessResult::allowed();
+      $result = AccessResult::allowed();
     }
+    else {
+      $result = parent::checkAccess($node, $account, $op);
+    }
+    $result->cachePerUser();
 
-    return parent::checkAccess($node, $account, $op);
+    return $result;
   }
 
 }
