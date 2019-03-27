@@ -412,7 +412,7 @@ function node_authlink_cron() {
       db_delete('node_authlink_nodes')
         ->condition('nid', $nid)
         ->execute();
-      node_authlink_node_insert($nid);
+      node_authlink_create($nid);
     }
   }
 }
