@@ -3,6 +3,7 @@
 namespace Drupal\node_authlink\Access;
 
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\node\Access\NodeRevisionAccessCheck as NodeRevisionAccessCheckOriginal;
 use Drupal\node\NodeInterface;
@@ -24,7 +25,9 @@ class NodeRevisionAccessCheck extends NodeRevisionAccessCheckOriginal {
     else {
       $result = parent::checkAccess($node, $account, $op);
     }
-    $result->cachePerUser();
+    if ($result instanceof AccessResultInterface) {
+      $result->cachePerUser();
+    }
 
     return $result;
   }
