@@ -45,7 +45,7 @@ function node_authlink_form_node_type_form_alter(&$form, FormStateInterface &$fo
     '#default_value' => isset($config_grants[$type])? $config_grants[$type] : [],
     '#options' => [
       'view' => t('View'),
-      'edit' => t('Update'),
+      'update' => t('Update'),
       'delete' => t('Delete'),
     ],
     '#description' => t('What operations will be temporarily given to authorised user for the node. This not affect users who is authorised yet.'),
@@ -200,7 +200,7 @@ function node_authlink_load_authkey($nid) {
  * Get edit URL of specified node.
  *
  * @param $node Node object or NID.
- * @param string $op Operation to do with node. view, edit (default) or delete.
+ * @param string $op Operation to do with node. view, update (default) or delete.
  * @param null $revision_id
  *
  * @return bool|\Drupal\Core\GeneratedUrl|string
@@ -223,7 +223,7 @@ function node_authlink_get_url($node, $op = 'view', $revision_id = NULL) {
         $route_name = 'entity.node.canonical';
       }
       break;
-    case 'edit':
+    case 'update':
       $route_name = 'entity.node.edit_form';
       break;
     case 'delete':
@@ -464,7 +464,7 @@ function node_authlink_tokens($type, $tokens, array $data = [], array $options =
   }
 
   if (isset($tokens['authlink:edit-url'])) {
-    $replacements['[node:authlink:edit-url]'] = node_authlink_get_url($data['node'], 'edit');
+    $replacements['[node:authlink:edit-url]'] = node_authlink_get_url($data['node'], 'update');
   }
 
   if (isset($tokens['authlink:delete-url'])) {
