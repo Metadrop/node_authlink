@@ -10,6 +10,7 @@ use Drupal\node\Entity\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 
 /**
  * Class NodeAuthlinkNodeForm.
@@ -22,18 +23,29 @@ class NodeAuthlinkNodeForm extends FormBase {
    * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected $configFactory;
+
+  /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
   /**
    * Constructs a new NodeAuthlinkNodeForm object.
    */
   public function __construct(
-    ConfigFactoryInterface $config_factory
+    ConfigFactoryInterface $config_factory,
+    EntityTypeManagerInterface $entity_type_manager
   ) {
     $this->configFactory = $config_factory;
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('config.factory')
+      $container->get('config.factory'),
+      $container->get('entity_type.manager')
     );
   }
 
@@ -74,7 +86,7 @@ class NodeAuthlinkNodeForm extends FormBase {
         $has_revisions = FALSE;
         if ($op == 'view') {
           $has_revisions = TRUE;
-          $node_storage = \Drupal::entityManager()->getStorage('node');
+          $node_storage = $this->entityTypeManager->getStorage('node');
 
           $result = $node_storage->getQuery()
             ->allRevisions()
@@ -201,7 +213,7 @@ class NodeAuthlinkNodeForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // Display result.
     foreach ($form_state->getValues() as $key => $value) {
-      drupal_set_message($key . ': ' . $value);
+      $this->messenger()->addMessage($key . ': ' . $value);
     }
 
   }

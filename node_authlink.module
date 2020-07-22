@@ -3,6 +3,7 @@
 use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Messenger\Messenger;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
@@ -134,7 +135,7 @@ function node_authlink_form_node_type_form_alter_submit(&$form, FormStateInterfa
  */
 function node_authlink_batch_generate(&$form, FormStateInterface &$form_state) {
   // Load NIDs that are not in the authkeys table
-  $query = db_select('node', 'n');
+  $query = \Drupal::database()->select('node', 'n');
   $query->leftJoin('node_authlink_nodes', 'a', 'n.nid = a.nid');
   $query->fields('n', ['nid'])
     ->condition('type', $form_state->getValue('type'))
@@ -146,7 +147,7 @@ function node_authlink_batch_generate(&$form, FormStateInterface &$form_state) {
     node_authlink_create($nid);
   }
 
-  drupal_set_message(t('%num authkeys has been generated.', ['%num' => count($nids)]));
+  \Drupal::messenger()->addMessage(t('%num authkeys has been generated.', ['%num' => count($nids)]));
 }
 
 /**
@@ -159,7 +160,7 @@ function node_authlink_batch_generate(&$form, FormStateInterface &$form_state) {
  */
 function node_authlink_batch_delete(array &$form, FormStateInterface &$form_state) {
   // NIDs of nodes that are in this node type.
-  $query = db_select('node', 'n');
+  $query = \Drupal::database()->select('node', 'n');
   $query->leftJoin('node_authlink_nodes', 'a', 'n.nid = a.nid');
   $query->fields('n', ['nid'])
     ->condition('type', $form_state->getValue('type'))
@@ -170,7 +171,7 @@ function node_authlink_batch_delete(array &$form, FormStateInterface &$form_stat
     node_authlink_delete($nid);
   }
 
-  drupal_set_message(t('%num authkeys has been deleted.', ['%num' => count($nids)]));
+  \Drupal::messenger()->addMessage(t('%num authkeys has been deleted.', ['%num' => count($nids)]));
 }
 
 /**
@@ -191,7 +192,7 @@ function node_authlink_node_load($nodes) {
  * Loads key from NID.
  */
 function node_authlink_load_authkey($nid) {
-  $result = db_query('SELECT authkey FROM {node_authlink_nodes} WHERE nid = :nid', [':nid' => $nid]);
+  $result = \Drupal::database()->query('SELECT authkey FROM {node_authlink_nodes} WHERE nid = :nid', [':nid' => $nid]);
   return $result->fetchField();
 }
 
@@ -355,10 +356,10 @@ function node_authlink_create($node) {
   }
 
   // Generate key if not yet
-  $authkey = isset($node->authkey) ? $node->authkey : hash('sha256', Crypt::randomBytes(64));
+  $authkey = isset($node->authkey) ? $node->authkey : hash('sha256', random_bytes(64));
 
   // Save to DB
-  db_insert('node_authlink_nodes')
+  \Drupal::database()->insert('node_authlink_nodes')
     ->fields([
       'nid' => $nid,
       'authkey' => $authkey,
@@ -381,7 +382,7 @@ function node_authlink_delete($node) {
   }
 
   // Delete keys
-  $count = db_delete('node_authlink_nodes')
+  $count = \Drupal::database()->delete('node_authlink_nodes')
     ->condition('nid', $nid)
     ->execute();
 }
@@ -390,7 +391,7 @@ function node_authlink_delete($node) {
  * Implementation of hook_cron().
  */
 function node_authlink_cron() {
-  $node_types = node_type_get_types();
+  $node_types = \Drupal\node\Entity\NodeType::loadMultiple();
   $config = \Drupal::config('node_authlink.settings');
 
   foreach ($node_types as $type) {
@@ -400,7 +401,7 @@ function node_authlink_cron() {
     }
 
     // NIDs of expired keys
-    $query = db_select('node', 'n');
+    $query = \Drupal::database()->select('node', 'n');
     $query->leftJoin('node_authlink_nodes', 'a', 'n.nid = a.nid');
     $query->fields('n', ['nid'])
       ->condition('n.type', $type->id())
@@ -409,7 +410,7 @@ function node_authlink_cron() {
 
     // Regenerate keys
     foreach ($nids as $nid) {
-      db_delete('node_authlink_nodes')
+      \Drupal::database()->delete('node_authlink_nodes')
         ->condition('nid', $nid)
         ->execute();
       node_authlink_create($nid);
